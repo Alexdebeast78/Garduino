@@ -12,8 +12,8 @@
 int relayGPIOs[NUM_RELAYS] = {14, 27};
 
 // Replace with your network credentials
-const char* ssid = "iPhone";
-const char* password = "idiots123";
+const char* ssid = "Yourwifissid";
+const char* password = "Yourwifipassword";
 
 const char* PARAM_INPUT_1 = "relay";  
 const char* PARAM_INPUT_2 = "state";
