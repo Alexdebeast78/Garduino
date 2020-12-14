@@ -23,3 +23,7 @@ Hardware required
   
 So thats basically it. I hope you can find some use from this project or just find it intresting.  
 I will continue to add to the code and make it work graduarly as I progress.  
+
+
+You must have metasploit installation up and running in path /tools/metasploit-framework/
+Information and instructions for the installation of additional tools to the Bash Bunny can be found [here](https://docs.hak5.org/hc/en-us/articles/360010554133-Installing-and-using-additional-tools).
