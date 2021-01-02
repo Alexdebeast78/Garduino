@@ -1,20 +1,17 @@
 const byte led_pin = 5;
 const byte light_sensor = A7;
+const char ssid[] = "SSID";  //  your network SSID (name)
+const char pass[] = "PASSWORD";       // your network password
+
 bool just_on;
 
 #include <TimeLib.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
 
-const char ssid[] = "Wifi4arduino";  //  your network SSID (name)
-const char pass[] = "EasyGuest123";       // your network password
-
 // NTP Servers:
 static const char ntpServerName[] = "0.dk.pool.ntp.org";
-
-
 const int timeZone = 1;     // Central European Time
-
 
 WiFiUDP Udp;
 unsigned int localPort = 8888;  // local port to listen for UDP packets
@@ -53,8 +50,6 @@ void setup()
   //Relay setup
   pinMode(led_pin, OUTPUT);
   pinMode(led_pin, LOW);
-
-
 }
 
 time_t prevDisplay = 0; // when the digital clock was displayed
@@ -75,7 +70,7 @@ void loop()
   }
   //Check time and light level
   if (minute() % 5 == 0 && not just_on) {
-    if (hour() == 4 || hour() == 5 || hour() == 6 || hour() == 7 || hour() == 8 || hour() == 9 || hour() == 10 || hour() == 11 || hour() == 12 || hour() == 13 || hour() == 14 || hour() == 15 || hour() == 16 || hour() == 17 || hour() == 18 || hour() == 20 || hour() == 1) {
+    if (hour() == 4 || hour() == 5 || hour() == 6 || hour() == 7 || hour() == 8 || hour() == 9 || hour() == 10 || hour() == 11 || hour() == 12 || hour() == 13 || hour() == 14 || hour() == 15 || hour() == 16 || hour() == 17 || hour() == 18 || hour() == 19 || hour() ==20) {
       if (light_reading < 100) {
         digitalWrite(led_pin, HIGH);
         Serial.println("LED strip is on!");
@@ -84,27 +79,21 @@ void loop()
       }
       else {
         digitalWrite(led_pin, LOW);
-        Serial.println("LED strip is off!1");
+        Serial.println("LED strip is off!");
       }
     }
     else {
       digitalWrite(led_pin, LOW);
-      Serial.println("LED strip is off!2");
+      Serial.println("LED strip is off!");
     }
 
   }
-
-
   if (minute() % 5 == 0) {
-
   }
   else {
     just_on = false;
-    Serial.println(1);
+
   }
-
-
-
   //Give up some time
   delay(5000);
 }
@@ -141,7 +130,6 @@ byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming & outgoing packets
 time_t getNtpTime()
 {
   IPAddress ntpServerIP; // NTP server's ip address
-  Serial.println(1);
   while (Udp.parsePacket() > 0) ; // discard any previously received packets
   Serial.println("Transmit NTP Request");
   // get a random server from the pool
