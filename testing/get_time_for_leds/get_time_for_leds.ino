@@ -1,10 +1,13 @@
+const byte led_pin = 5;
+const byte light_sensor = A7;
+bool just_on;
 
 #include <TimeLib.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
 
-const char ssid[] = "WIFISSID";  //  your network SSID (name)
-const char pass[] = "Wifi Pass";       // your network password
+const char ssid[] = "Wifi4arduino";  //  your network SSID (name)
+const char pass[] = "EasyGuest123";       // your network password
 
 // NTP Servers:
 static const char ntpServerName[] = "0.dk.pool.ntp.org";
@@ -46,19 +49,64 @@ void setup()
   setSyncProvider(getNtpTime);
   setSyncInterval(300);
   Serial.println(hour());
+
+  //Relay setup
+  pinMode(led_pin, OUTPUT);
+  pinMode(led_pin, LOW);
+
+
 }
 
 time_t prevDisplay = 0; // when the digital clock was displayed
 
 void loop()
 {
+  //Get light  value
+  int light_reading = analogRead(light_sensor);
+  Serial.println(light_reading);
+
+  //Get time
   if (timeStatus() != timeNotSet) {
     if (now() != prevDisplay) { //update the display only if time has changed
-      //this could be useful for my oled 
+      //this could be useful for my oled
       prevDisplay = now();
       digitalClockDisplay();
     }
   }
+  //Check time and light level
+  if (minute() % 5 == 0 && not just_on) {
+    if (hour() == 4 || hour() == 5 || hour() == 6 || hour() == 7 || hour() == 8 || hour() == 9 || hour() == 10 || hour() == 11 || hour() == 12 || hour() == 13 || hour() == 14 || hour() == 15 || hour() == 16 || hour() == 17 || hour() == 18 || hour() == 20 || hour() == 1) {
+      if (light_reading < 100) {
+        digitalWrite(led_pin, HIGH);
+        Serial.println("LED strip is on!");
+        just_on = true;
+
+      }
+      else {
+        digitalWrite(led_pin, LOW);
+        Serial.println("LED strip is off!1");
+      }
+    }
+    else {
+      digitalWrite(led_pin, LOW);
+      Serial.println("LED strip is off!2");
+    }
+
+  }
+
+
+  if (minute() % 5 == 0) {
+
+  }
+  else {
+    just_on = false;
+    Serial.println(1);
+  }
+
+
+
+  //Give up some time
+  delay(5000);
 }
 
 void digitalClockDisplay()
