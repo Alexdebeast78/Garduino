@@ -1,3 +1,5 @@
+//Beta will not have the pump system or full OLED graphics implemented 
+
 # Garduino
 
 
