@@ -1,5 +1,4 @@
-
-const int floatswitch = 17;
+const byte floatswitch = 17;
 
 void setup() {
   Serial.begin(115200);
@@ -7,6 +6,8 @@ void setup() {
 }
 
 void loop() {
-  Serial.println(digitalRead(floatswitch));
-
+  int water = digitalRead(floatswitch);
+  if (water==1){
+    Serial.println("Water is empty!");
+  }
 }
