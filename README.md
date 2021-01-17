@@ -1,4 +1,4 @@
-//Beta will not have the pump system or full OLED graphics implemented 
+//Beta does not have oled graphics implamented and pump code may have bugs. 
 
 # Garduino
 
