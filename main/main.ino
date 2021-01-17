@@ -1,25 +1,25 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                          //                                                  
+//                                                                                                          //
 // Garduino with Heltec WiFi Kit 32                                                                        //
 //                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                          //                                                  
+//                                                                                                          //
 // Includes.                                                                                               //
 //                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include <heltec.h>
 #include <Arduino.h>
-#include <U8g2lib.h> 
+#include <U8g2lib.h>
 #include <DHT.h>
 #include <TimeLib.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                          //                                                  
+//                                                                                                          //
 // Constants.                                                                                              //
 //                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -28,26 +28,27 @@ const byte DHTPIN_11 = 27;
 const byte floatswitch = 17;
 const byte led_pin = 5;
 const byte light_sensor = A7;
+const byte pump_pin = 18;
 
 const int FONT_ONE_HEIGHT = 8;
 const int FONT_TWO_HEIGHT = 20;
 const int timeZone = 1;     // CET
 const int NTP_PACKET_SIZE = 48; // NTP time is in the first 48 bytes of message
-const int dry=2900;
+const int dry = 3500;
 
 char      chBuffer[128];
-const char ssid[] = "";  //  your network SSID (name)
-const char pass[] = "";       // your network password
+const char ssid[] = "Wifi4arduino";  //  your network SSID (name)
+const char pass[] = "EasyGuest123";       // your network password
 static const char ntpServerName[] = "0.dk.pool.ntp.org";
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                          //                                                  
+//                                                                                                          //
 // Variables.                                                                                              //
 //                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 DHT dht11(DHTPIN_11, DHT11);
 DHT dht22(DHTPIN_22, DHT22);
-U8G2_SSD1306_128X64_NONAME_F_HW_I2C   u8g2(U8G2_R0, 16, 15, 4); 
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C   u8g2(U8G2_R0, 16, 15, 4);
 WiFiUDP Udp;
 time_t prevDisplay = 0; // when the digital clock was displayed
 
@@ -58,7 +59,7 @@ unsigned int localPort = 8888;  // local port to listen for UDP packets
 int moisture_level;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                          //                                                  
+//                                                                                                          //
 // Setup.                                                                                                  //
 //                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -68,16 +69,24 @@ void printDigits(int digits);
 void sendNTPpacket(IPAddress &address);
 
 void setup() {
+  //Led setup
+  pinMode(led_pin, OUTPUT);
+  digitalWrite(led_pin, HIGH);
+
+  //pump setup
+  pinMode(pump_pin, OUTPUT);
+  digitalWrite(pump_pin, HIGH);
+
   Serial.begin(115200); // send and receive at 9600 baud
   delay(1000);
   Heltec.begin(true /*DisplayEnable Enable*/, false /*LoRa Disable*/, true /*Serial Enable*/);
   Heltec.display->setContrast(255);
   Heltec.display->clear();
 
-  //Welcome screen 
+  //Welcome screen
   Serial.println("WELCOME SCREEN");
-  for (int16_t i=0; i<DISPLAY_HEIGHT; i+=2) {
-    Heltec.display->drawCircle(DISPLAY_WIDTH/2, DISPLAY_HEIGHT/2, i);
+  for (int16_t i = 0; i < DISPLAY_HEIGHT; i += 2) {
+    Heltec.display->drawCircle(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, i);
     Heltec.display->display();
     delay(10);
   }
@@ -89,18 +98,18 @@ void setup() {
   //  ------|-----
   //   0100 | 1000
   //
-  Heltec.display->drawCircleQuads(DISPLAY_WIDTH/2, DISPLAY_HEIGHT/2, DISPLAY_HEIGHT/4, 0b00000001);
+  Heltec.display->drawCircleQuads(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, DISPLAY_HEIGHT / 4, 0b00000001);
   Heltec.display->display();
   delay(200);
-  Heltec.display->drawCircleQuads(DISPLAY_WIDTH/2, DISPLAY_HEIGHT/2, DISPLAY_HEIGHT/4, 0b00000011);
+  Heltec.display->drawCircleQuads(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, DISPLAY_HEIGHT / 4, 0b00000011);
   Heltec.display->display();
   delay(200);
-  Heltec.display->drawCircleQuads(DISPLAY_WIDTH/2, DISPLAY_HEIGHT/2, DISPLAY_HEIGHT/4, 0b00000111);
+  Heltec.display->drawCircleQuads(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, DISPLAY_HEIGHT / 4, 0b00000111);
   Heltec.display->display();
   delay(200);
-  Heltec.display->drawCircleQuads(DISPLAY_WIDTH/2, DISPLAY_HEIGHT/2, DISPLAY_HEIGHT/4, 0b00001111);
+  Heltec.display->drawCircleQuads(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, DISPLAY_HEIGHT / 4, 0b00001111);
   Heltec.display->display();
-  //Small Circle 
+  //Small Circle
   delay(1000);
   Heltec.display->clear();
   u8g2.begin();
@@ -109,7 +118,7 @@ void setup() {
   u8g2.setDrawColor(1);
   u8g2.setFontPosTop();
   u8g2.setFontDirection(0);
-  //My name 
+  //My name
   u8g2.clearBuffer();
   sprintf(chBuffer, "%s", "Welcome to");
   u8g2.drawStr(64 - (u8g2.getStrWidth(chBuffer) / 2), 0, chBuffer);
@@ -118,13 +127,13 @@ void setup() {
   u8g2.sendBuffer();
   u8g2.setFont(u8g2_font_helvR12_tr);
   sprintf(chBuffer, "%s", "by Alexdebeast78");
-  u8g2.drawStr(64 - (u8g2.getStrWidth(chBuffer) / 2),52- (FONT_ONE_HEIGHT / 2),chBuffer);
+  u8g2.drawStr(64 - (u8g2.getStrWidth(chBuffer) / 2), 52 - (FONT_ONE_HEIGHT / 2), chBuffer);
   u8g2.sendBuffer();
   delay(5000);
   u8g2.clear();
 
-  //Connect to wifi 
-  Serial.println("TimeNTP Example");
+  //Connect to wifi
+  Serial.println("TimeNTP");
   Serial.print("Connecting to ");
   Serial.println(ssid);
   WiFi.begin(ssid, pass);
@@ -134,27 +143,26 @@ void setup() {
   }
   Serial.print("IP number assigned by DHCP is ");
   Serial.println(WiFi.localIP());
-  
-  //Start UDP 
+
+  //Start UDP
   Serial.println("Starting UDP");
   Udp.begin(localPort);
   Serial.print("Local port: ");
 
-  //Get time from NTP server 
+  //Get time from NTP server
   Serial.println("waiting for sync");
   setSyncProvider(getNtpTime);
   setSyncInterval(300);
   Serial.println(hour());
-  
-  //DHT sensors  begin 
+
+  //DHT sensors  begin
   dht11.begin();
   dht22.begin();
 
-  //Float switch set pin type 
-  pinMode(floatswitch,INPUT_PULLUP);
+  //Float switch set pin type
+  pinMode(floatswitch, INPUT_PULLUP);
 
-  //Led setup 
-  pinMode(led_pin, OUTPUT);
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -171,48 +179,36 @@ void loop() {
   float t_11 = dht11.readTemperature();
   float t_22 = dht22.readTemperature();
 
-  // Check if any reads failed and exit early (to try again).
-  if (isnan(h_11) && isnan(t_11) && isnan(h_22) && isnan(t_22)) {
-    Serial.println("Failed to read from DHT sensors!");
-    return;
-  }
-  else if (isnan(h_11) || isnan(t_11)) {
-    Serial.println("Failed to read from DHT11 sensor!");
-    return;
-  }
-  else if (isnan(h_22) || isnan(t_22)) {
-    Serial.println("Failed to read from DHT22 sensor!");
-    return;
-  }
-  Serial.print("DHT11 Humidity: "); 
+
+  Serial.print("DHT11 Humidity: ");
   Serial.print(h_11);
   Serial.print(" %\t");
-  Serial.print("DHT11 Temperature: "); 
+  Serial.print("DHT11 Temperature: ");
   Serial.print(t_11);
   Serial.println(" *C ");
 
-  Serial.print("DHT22 Humidity: "); 
+  Serial.print("DHT22 Humidity: ");
   Serial.print(h_22);
   Serial.print(" %\t");
-  Serial.print("DHT22 Temperature: "); 
+  Serial.print("DHT22 Temperature: ");
   Serial.print(t_22);
   Serial.println(" *C ");
 
-  //Float switch check for empty water 
+  //Float switch check for empty water
   int water = digitalRead(floatswitch);
-  if (water==1){
+  if (water == 1) {
     Serial.println("Water is empty!");
   }
-  
+
   //Get light  value
   int light_reading = analogRead(light_sensor);
   Serial.println(light_reading);
 
   //Get moisture level
-  moisture_level=analogRead(34);
-  Serial.println(moisture_level);  
-  if (moisture_level>dry){
-    Serial.println("Soil is dry!");
+  moisture_level = analogRead(34);
+  Serial.println(moisture_level);
+  if (moisture_level > dry) {
+    Serial.println("Soil Is dry");
   }
   //Get time
   if (timeStatus() != timeNotSet) {
@@ -227,27 +223,38 @@ void loop() {
   if (minute() % 5 == 0 && not just_on) {
     if (hour() == 4 || hour() == 5 || hour() == 6 || hour() == 7 || hour() == 8 || hour() == 9 || hour() == 10 || hour() == 11 || hour() == 12 || hour() == 13 || hour() == 14 || hour() == 15 || hour() == 16 || hour() == 17 || hour() == 18 || hour() == 19 || hour() == 20) {
       if (light_reading < 100) {
-        digitalWrite(led_pin, HIGH);
+        digitalWrite(led_pin, LOW);
         Serial.println("LED strip is on!");
         just_on = true;
 
       }
       else {
-        digitalWrite(led_pin, LOW);
+        digitalWrite(led_pin, HIGH);
         Serial.println("LED strip is off!");
       }
     }
     else {
-      digitalWrite(led_pin, LOW);
+      digitalWrite(led_pin, HIGH);
       Serial.println("LED strip is off!");
     }
   }
-    
-  //Set just_on to false when conditional is not running 
+
+  //Set just_on to false when conditional is not running
   if (minute() % 5 == 0) {
   }
   else {
     just_on = false;
+  }
+
+  //pump
+  if (moisture_level > dry && water == 0) {
+    Serial.println("Soil is dry!");
+    digitalWrite(pump_pin, LOW);
+    Serial.println("Watering!");
+    delay(2000);
+    digitalWrite(pump_pin, HIGH);
+
+
   }
 
   // Wait a few seconds between measurements.
